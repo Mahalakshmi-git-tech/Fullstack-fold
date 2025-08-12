@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Transaction QR Scanner</title>
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs/qrcode.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .qr-container {
+      background: #ffffff;
+      padding: 40px 50px;
+      border-radius: 20px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      max-width: 600px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    h2 {
+      margin-bottom: 25px;
+      font-size: 24px;
+      color: #222;
+    }
+
+    #transactionScreenQR {
+      margin: 20px auto;
+      display: flex;
+      justify-content: center;
+    }
+
+    .scan-btn {
+      margin-top: 20px;
+      padding: 12px 24px;
+      background-color: #1e90ff;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    .scan-btn:hover {
+      background-color: #0f75d0;
+    }
+
+    .result-box {
+      margin-top: 25px;
+      background-color: #f8f9fa;
+      padding: 16px;
+      border-radius: 10px;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      color: #333;
+      max-height: 300px;
+      overflow-y: auto;
+      text-align: left;
+      white-space: pre-wrap;
+      width: 100%;
+    }
+
+    .info {
+      font-size: 13px;
+      color: #666;
+      margin-top: 15px;
+    }
+
+    .date-label {
+      font-size: 14px;
+      color: #444;
+      margin-bottom: 10px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="qr-container">
+    <h2>Transaction QR Code</h2>
+    <div class="date-label" id="latestDateLabel">Loading latest transaction timestamp…</div>
+    <div id="transactionScreenQR">Loading QR...</div>
+    <button class="scan-btn" onclick="scanQR()">Scan QR</button>
+    <div class="result-box" id="scanResult">Scanned result will appear here...</div>
+    <div class="info">QR includes all transactions with the latest exact date & time</div>
+  </div>
+
+  <script>
+    let latestItemTransactions = [];
+
+    async function generateLastItemTransactionsQR() {
+      try {
+        const res = await fetch("/api/transactions/list", {
+          headers: { 'Accept': 'application/json' }
+        });
+
+        if (!res.ok) throw new Error("Failed to fetch transactions");
+
+        const transactions = await res.json();
+
+        if (!Array.isArray(transactions) || transactions.length === 0) {
+          document.getElementById("transactionScreenQR").innerText = "No transaction found.";
+          return;
+        }
+
+        // Filter out transactions that don't have a valid date field
+        const validTransactions = transactions.filter(t => t.date);
+        if (validTransactions.length === 0) {
+          document.getElementById("transactionScreenQR").innerText = "No valid transaction dates.";
+          return;
+        }
+
+        // Sort descending by exact timestamp
+        validTransactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        // Get latest timestamp
+        const latestTimestamp = new Date(validTransactions[0].date).toISOString();
+
+        // Show the exact latest time
+        document.getElementById("latestDateLabel").innerText =
+          "Latest Transaction: " + new Date(latestTimestamp).toLocaleString();
+
+        // Filter all transactions that have the exact same timestamp
+        latestItemTransactions = validTransactions.filter(t =>
+          new Date(t.date).toISOString() === latestTimestamp
+        );
+
+        const dataToEncode = JSON.stringify(latestItemTransactions, null, 2);
+
+        document.getElementById("transactionScreenQR").innerHTML = "";
+        new QRCode(document.getElementById("transactionScreenQR"), {
+          text: dataToEncode,
+          width: 230,
+          height: 230,
+          colorDark: "#000000",
+          colorLight: "#ffffff",
+          correctLevel: QRCode.CorrectLevel.H
+        });
+
+      } catch (err) {
+        console.error("QR generation error:", err);
+        document.getElementById("transactionScreenQR").innerText = "Failed to load transaction.";
+      }
+    }
+
+    function scanQR() {
+      if (!latestItemTransactions.length) {
+        document.getElementById("scanResult").innerText = "No transaction data available to scan.";
+        return;
+      }
+
+      const resultText = latestItemTransactions.map(tx => `Operation: ${tx.operation}
+Item Code: ${tx.item_code}
+Quantity: ${tx.quantity}
+Date: ${new Date(tx.date).toLocaleString()}`)
+      .join("\n-----------------------------\n");
+
+      document.getElementById("scanResult").innerText = resultText;
+    }
+
+    window.addEventListener("DOMContentLoaded", generateLastItemTransactionsQR);
+  </script>
+</body>
+</html>
