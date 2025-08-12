@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Operation Master</title>
+  <link href="https://fonts.googleapis.com/css2?family=Segoe+UI&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(to right, #1a73e8, #4285f4);
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #333;
+    }
+
+    .container {
+      background-color: #ffffff;
+      padding: 40px;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+      width: 100%;
+      max-width: 450px;
+      position: relative;
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 25px;
+      color: #1a1a1a;
+    }
+
+    .form-group {
+      margin-bottom: 18px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 500;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 12px;
+      font-size: 14px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      transition: border-color 0.3s;
+    }
+
+    .form-group input:focus {
+      border-color: #1a73e8;
+      outline: none;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      font-weight: bold;
+      color: #fff;
+      background: linear-gradient(to right, #1a73e8, #1669c1);
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: 0.3s ease;
+    }
+
+    .btn:hover {
+      background: linear-gradient(to right, #1669c1, #1a73e8);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .top-right {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+    }
+
+    .list-btn {
+      padding: 8px 16px;
+      font-size: 14px;
+      background-color: #fff;
+      border: 1px solid #1a73e8;
+      color: #1a73e8;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    .list-btn:hover {
+      background-color: #e3f0ff;
+    }
+
+    .message {
+      text-align: center;
+      font-size: 14px;
+      margin-top: 10px;
+      color: green;
+      min-height: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="top-right">
+      <button class="list-btn" onclick="window.location.href='operationList.html'">List</button>
+    </div>
+
+    <h2>Operation Master</h2>
+    <form id="operationForm">
+      <div class="form-group">
+        <label for="operation_code">Operation Code</label>
+        <input type="text" id="operation_code" name="operation_code" required />
+      </div>
+      <div class="form-group">
+        <label for="operation_name">Operation Name</label>
+        <input type="text" id="operation_name" name="operation_name" required />
+      </div>
+      <div class="form-group">
+        <label for="operation_character">Operation Character</label>
+        <input type="text" id="operation_character" name="operation_character" required />
+      </div>
+
+      <button type="submit" class="btn">Submit</button>
+      <div class="message" id="message"></div>
+    </form>
+  </div>
+
+  <script>
+    const form = document.getElementById("operationForm");
+    const message = document.getElementById("message");
+
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+
+      const data = {
+        operation_code: form.operation_code.value.trim(),
+        operation_name: form.operation_name.value.trim(),
+        operation_character: form.operation_character.value.trim()
+      };
+
+      fetch("http://localhost:3000/api/operations/add", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      })
+        .then((res) => res.json())
+        .then((result) => {
+          message.textContent = result.message || "Operation added successfully";
+          message.style.color = result.success === false ? "red" : "green";
+          form.reset();
+        })
+        .catch(() => {
+          message.textContent = "Error connecting to server.";
+          message.style.color = "red";
+        });
+    });
+  </script>
+</body>
+</html>

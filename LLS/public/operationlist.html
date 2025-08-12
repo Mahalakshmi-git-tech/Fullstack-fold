@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Operation List</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(to right, #f3f4f6, #ffffff);
+      margin: 0;
+      padding: 0;
+      align-items: center;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 40px auto;
+      padding: 20px;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 2rem;
+      color: #333;
+    }
+
+    .form-row {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+      justify-content: center;
+    }
+
+    .form-row input {
+      padding: 10px 14px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      width: 200px;
+    }
+
+    .add-btn {
+      background-color: #0d6efd;
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    .add-btn:hover {
+      background-color: #094db1;
+    }
+
+    table {
+      width: 110%;
+      border-collapse: collapse;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+      background-color: #ffffff;
+      align-self: center;
+    }
+
+    th, td {
+      padding: 14px 20px;
+      text-align: left;
+      font-size: 14px;
+      border-bottom: 1px solid #e9e9e9;
+    }
+
+    th {
+      background-color: #007bff;
+      color: #fff;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    tr:nth-child(even) td {
+      background-color: #f8f9fa;
+    }
+
+    tr:hover td {
+      background-color: #e7f1ff;
+      transition: background-color 0.3s ease;
+    }
+
+    td input {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 14px;
+      background-color: #fefefe;
+    }
+
+    .btn {
+      padding: 8px 12px;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      margin-right: 4px;
+      color: white;
+    }
+
+    .edit-btn, .update-btn {
+      background-color: #007bff;
+    }
+
+    .edit-btn:hover, .update-btn:hover {
+      background-color: #154c86;
+    }
+
+    .delete-btn {
+      background-color: #dc3545;
+    }
+
+    .delete-btn:hover {
+      background-color: #c82333;
+    }
+
+    @media (max-width: 768px) {
+      .form-row {
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .form-row input {
+        width: 90%;
+      }
+    }
+
+    .table-wrapper {
+      max-width: 900px;
+      margin: auto;
+    }
+  </style>
+  
+</head>
+<body>
+
+<h1>Operation List</h1>
+
+<!-- 🔼 Add New Operation Form -->
+<div class="form-row">
+  <input type="text" id="newOperationCode" placeholder="Operation Code">
+  <input type="text" id="newOperationName" placeholder="Operation Name">
+  <input type="text" id="newOperationChar" placeholder="Operation Character">
+  <button class="btn add-btn" onclick="addNewOperation()">Add Operation</button>
+</div>
+
+<!-- 🔽 Operation Table -->
+<div class="table-wrapper">
+  <table>
+    <thead>
+      <tr>
+        <th>Operation Code</th>
+        <th>Operation Name</th>
+        <th>Character</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="operationTableBody">
+      <tr><td colspan="4" style="text-align:center;">Loading...</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<script>
+const API_BASE = 'http://localhost:3000/api/operations';
+
+async function fetchOperations() {
+  const tbody = document.getElementById('operationTableBody');
+  tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Loading...</td></tr>';
+
+  try {
+    const res = await fetch(`${API_BASE}/list`);
+    const operations = await res.json();
+    tbody.innerHTML = '';
+
+    operations.forEach(op => {
+      const row = document.createElement('tr');
+
+      row.innerHTML = `
+        <td><input type="text" value="${op.operation_code}" data-field="operation_code" readonly></td>
+        <td><input type="text" value="${op.operation_name}" data-field="operation_name" readonly></td>
+        <td><input type="text" value="${op.operation_character}" data-field="operation_character" readonly></td>
+        <td>
+          <button class="btn edit-btn" onclick="enableEdit(this)">Edit</button>
+          <button class="btn update-btn" onclick="updateOperation('${op.operation_code}', this)">Update</button>
+          <button class="btn delete-btn" onclick="deleteOperation('${op.operation_code}')">Delete</button>
+        </td>
+      `;
+
+      tbody.appendChild(row);
+    });
+
+  } catch (error) {
+    console.error('Error loading operations:', error);
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:red;">Failed to load operations</td></tr>';
+  }
+}
+
+function enableEdit(button) {
+  const row = button.closest('tr');
+  const inputs = row.querySelectorAll('input');
+  inputs.forEach(input => input.removeAttribute('readonly'));
+}
+
+async function updateOperation(code, btn) {
+  const row = btn.closest('tr');
+  const inputs = row.querySelectorAll('input');
+
+  const updatedData = {};
+  inputs.forEach(input => {
+    const field = input.getAttribute('data-field');
+    updatedData[field] = input.value.trim();
+  });
+
+  try {
+    const res = await fetch(`${API_BASE}/update`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updatedData)
+    });
+
+    const result = await res.json();
+    alert(result.message || 'Operation updated successfully');
+    inputs.forEach(input => input.setAttribute('readonly', true));
+  } catch (error) {
+    console.error('Update failed:', error);
+    alert('Failed to update operation.');
+  }
+}
+
+async function deleteOperation(code) {
+  if (!confirm('Are you sure you want to delete this operation?')) return;
+
+  try {
+    const res = await fetch(`${API_BASE}/delete`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ operation_code: code })
+    });
+
+    const result = await res.json();
+    alert(result.message || 'Operation deleted');
+    fetchOperations();
+  } catch (error) {
+    console.error('Delete failed:', error);
+    alert('Failed to delete operation.');
+  }
+}
+
+async function addNewOperation() {
+  const operation_code = document.getElementById('newOperationCode').value.trim();
+  const operation_name = document.getElementById('newOperationName').value.trim();
+  const operation_character = document.getElementById('newOperationChar').value.trim();
+
+  if (!operation_code || !operation_name || !operation_character) {
+    alert('All fields are required.');
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/add`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ operation_code, operation_name, operation_character })
+    });
+
+    const result = await res.json();
+    alert(result.message || 'Operation added successfully');
+
+    document.getElementById('newOperationCode').value = '';
+    document.getElementById('newOperationName').value = '';
+    document.getElementById('newOperationChar').value = '';
+
+    fetchOperations();
+  } catch (error) {
+    console.error('Add operation failed:', error);
+    alert('Failed to add operation.');
+  }
+}
+
+// Load on page load
+window.onload = fetchOperations;
+</script>
+
+</body>
+</html>

@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Transaction List</title>
+  <style>
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(to right, #f5f7fa, #ffffff);
+    margin: 0;
+    padding: 0;
+  }
+
+  .container {
+    max-width: 1100px;
+    margin: 40px auto;
+    padding: 30px 40px;
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.200);
+  }
+
+  h2 {
+    text-align: center;
+    margin-bottom: 30px;
+    font-size: 2.2rem;
+    color: #2c3e50;
+    font-weight:bold;
+  }
+
+  .form-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 30px;
+  }
+
+  .form-row select,
+  .form-row input[type="number"] {
+    padding: 12px 16px;
+    font-size: 15px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    width: 200px;
+    background-color: #fff;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    transition: border 0.2s;
+  }
+
+  .form-row select:focus,
+  .form-row input:focus {
+    outline: none;
+    border-color: #007bff;
+  }
+
+  .add-btn {
+    background-color: #2aae3c;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    box-shadow: 0 3px 8px rgba(12, 114, 82, 0.2);
+  }
+
+  .add-btn:hover {
+    background-color: #199323;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.05);
+    background-color: #ffffff;
+  }
+
+  th, td {
+    padding: 20px 7px;
+    font-size: 16px;
+    border-bottom: 1px solid #e3e7ea;
+    text-align: center;
+  }
+
+  th {
+    background-color: #007bff;
+    color: white;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  tr:nth-child(even) td {
+    background-color: #f8f9fa;
+  }
+
+  tr:hover td {
+    background-color: #e7f1ff;
+    transition: background-color 0.3s ease;
+  }
+
+  input[readonly] {
+    border: none;
+    background: transparent;
+    text-align: center;
+    font-size: 15px;
+    color: #333;
+    width: 100%;
+    font-weight: 540;
+  }
+
+  .btn {
+    padding: 8px 14px;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    margin-right: 4px;
+    color: white;
+    transition: background-color 0.2s ease;
+  }
+
+  .delete-btn {
+    background-color: #e53f50;
+  }
+
+  .delete-btn:hover {
+    background-color: #c82333;
+  }
+
+  .qr-btn {
+    background-color: #2aae3c;
+  }
+
+  .qr-btn:hover {
+    background-color: #168623;
+  }
+
+  .quantity-count {
+    text-align: right;
+    margin: 15px 0;
+    font-weight: 600;
+    font-size: 15px;
+    color: #333;
+  }
+
+  .total-count {
+    font-weight: bolder;
+    margin-left: 30px;
+    font-size: large;
+  }
+
+  @media (max-width: 768px) {
+    .form-row {
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .form-row select,
+    .form-row input[type="number"] {
+      width: 100%;
+    }
+
+    .add-btn {
+      width: 100%;
+      background-color: #0056b3;
+    }
+
+    table, thead, tbody, th, td, tr {
+      font-size: 13px;
+    }
+  }
+  #qrTextOutput {
+  margin-top: 10px;
+  padding: 8px;
+  background-color: #f0f0f0;
+  border-left: 4px solid #4caf50;
+  font-family: monospace;
+  white-space: pre-line;
+}
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h2>Transaction Screen</h2>
+
+    <div class="form-row">
+      <select id="itemSelect">
+        <option value="">Select Item</option>
+      </select>
+      <select id="operationSelect">
+        <option value="">Select Operation</option>
+      </select>
+      <input type="number" id="quantityInput" placeholder="Enter Quantity" />
+      <button class="btn add-btn" onclick="addTransaction()">Add Transaction</button>
+    </div>
+
+    <div class="total-count">Total Transactions: <span id="transactionCount">0</span></div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>ITEM</th>
+          <th>OPERATION</th>
+          <th>QUANTITY</th>
+          <th>DATE & TIME</th>
+          <th>ACTIONS</th>
+        </tr>
+      </thead>
+      <tbody id="transactionTableBody"></tbody>
+    </table>
+
+    <!-- QR Modal -->
+    <!-- QR Modal Popup -->
+<div id="qrModal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.6); justify-content:center; align-items:center; z-index:1000;">
+  <div style="background:#fff; padding:20px 30px; border-radius:12px; text-align:center; position:relative; max-width:90%; box-shadow: 0 8px 20px rgba(0,0,0,0.3); min-width:300px;">
+    <!-- ❌ Close Icon -->
+    <span id="closeIcon" onclick="closeQR()" style="position:absolute; top:10px; right:15px; font-size:22px; cursor:pointer; font-weight:bold;">&times;</span>
+
+    <!-- QR Code Canvas -->
+    <div id="qrOutput" style="margin-bottom:15px;"></div>
+
+    <!-- Display the QR Data -->
+    <pre id="qrTextOutput" style="margin-top:10px; text-align:left; background:#f8f9fa; padding:10px 15px; border-radius:6px; display:none; color:#333; white-space: pre-line;"></pre>
+
+    <!-- Print Button -->
+    <button id="printQRButton" onclick="printQRDetails()" style="display:none; padding:8px 16px; background:#28a745; color:white; border:none; border-radius:6px; cursor:pointer; margin-top:15px;">
+      Print QR
+    </button>
+  </div>
+</div>
+
+
+...
+<script>
+const API_TX = 'http://localhost:3000/api/transactions';
+const API_ITEMS = 'http://localhost:3000/api/items/list';
+const API_OPERATIONS = 'http://localhost:3000/api/operations/list';
+
+async function loadDropdowns() {
+  const itemSelect = document.getElementById('itemSelect');
+  const opSelect = document.getElementById('operationSelect');
+
+  const [itemsRes, opsRes] = await Promise.all([fetch(API_ITEMS), fetch(API_OPERATIONS)]);
+  const items = await itemsRes.json();
+  const operations = await opsRes.json();
+
+  itemSelect.innerHTML = '<option disabled selected>Select Item</option>' +
+    items.map(i => `<option value="${i.item_code}|${i.item_name}">${i.item_code} - ${i.item_name}</option>`).join('');
+
+  opSelect.innerHTML = '<option disabled selected>Select Operation</option>' +
+    operations.map(o => `<option value="${o.operation_code}|${o.operation_name}|${o.operation_character}">${o.operation_code} - ${o.operation_name} - ${o.operation_character}</option>`).join('');
+}
+
+async function fetchTransactions() {
+  const tbody = document.getElementById('transactionTableBody');
+  const counter = document.getElementById('transactionCount');
+
+  const res = await fetch(`${API_TX}/list`);
+  const transactions = await res.json();
+
+  tbody.innerHTML = '';
+  counter.textContent = transactions.length;
+
+  transactions.forEach(tx => {
+    const quantity = tx.quantity || 0;
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td><input type="text" value="${tx.item_code} - ${tx.item_name}" readonly></td>
+      <td><input type="text" value="${tx.operation_code} - ${tx.operation_name} - ${tx.operation_character}" readonly></td>
+      <td><input type="number" value="${quantity}" readonly></td>
+      <td><input type="text" value="${new Date(tx.date).toLocaleString()}" readonly></td>
+      <td>
+        <button class="btn qr-btn" onclick="generateQR('${tx.item_code}', '${tx.operation_code}', ${quantity}, '${new Date(tx.date).toLocaleString()}')">QR</button>
+      </td>
+    `;
+    tbody.appendChild(row);
+  });
+}
+
+async function addTransaction() {
+  try {
+    const itemVal = document.getElementById('itemSelect').value;
+    const opVal = document.getElementById('operationSelect').value;
+    const quantityInput = document.getElementById('quantityInput').value;
+    const quantity = parseInt(quantityInput);
+    if (!itemVal || !opVal || isNaN(quantity) || quantity <= 0) {
+      alert("Please select item, operation, and enter a valid quantity.");
+      return;
+    }
+
+    const [item_code, item_name] = itemVal.split('|');
+    const [operation_code, operation_name, operation_character] = opVal.split('|');
+
+    const res = await fetch(`${API_TX}/add`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ item_code, item_name, operation_code, operation_name, operation_character, quantity })
+    });
+
+    if (!res.ok) {
+      const error = await res.text();
+      console.error("Add Transaction Failed:", error);
+      alert("Failed to add transaction");
+      return;
+    }
+
+    await fetchTransactions();
+    document.getElementById('itemSelect').selectedIndex = 0;
+    document.getElementById('operationSelect').selectedIndex = 0;
+    document.getElementById('quantityInput').value = '';
+    alert("Transaction added successfully ✅");
+  } catch (err) {
+    console.error("Error in addTransaction():", err);
+    alert("Error adding transaction");
+  }
+}
+
+async function deleteTransaction(id) {
+  if (!confirm('Are you sure you want to delete this transaction?')) return;
+  await fetch(`${API_TX}/delete/${id}`, { method: 'DELETE' });
+  fetchTransactions();
+}
+
+let currentQRText = "";
+
+function generateQR(itemCode, operationCode, quantity, date) {
+  currentQRText = `Item Code: ${itemCode}\nOperation Code: ${operationCode}\nQuantity: ${quantity}\nDate: ${date}`;
+  
+  const output = document.getElementById("qrOutput");
+  const qrTextDiv = document.getElementById("qrTextOutput");
+  const closeIcon = document.getElementById("closeIcon");
+  const printButton = document.getElementById("printQRButton");
+
+  output.innerHTML = "";
+  qrTextDiv.textContent = "";
+  qrTextDiv.style.display = "none";
+  printButton.style.display = "none";
+
+  QRCode.toCanvas(document.createElement('canvas'), currentQRText, { width: 200 }, function (err, canvas) {
+    if (err) console.error(err);
+    output.appendChild(canvas);
+    document.getElementById("qrModal").style.display = "flex";
+    qrTextDiv.textContent = currentQRText;
+    qrTextDiv.style.display = "block";
+    printButton.style.display = "block";
+  });
+}
+
+function closeQR() {
+  document.getElementById("qrModal").style.display = "none";
+}
+
+function printQRDetails() {
+  const printWindow = window.open('', '_blank');
+  printWindow.document.write(`<pre>${currentQRText}</pre>`);
+  printWindow.document.close();
+  printWindow.print();
+}
+
+window.onload = () => {
+  loadDropdowns();
+  fetchTransactions();
+};
+</script>
+
+</body>
+</html>

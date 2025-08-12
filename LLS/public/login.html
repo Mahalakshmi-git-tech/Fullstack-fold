@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Login</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Roboto', sans-serif;
+      background: linear-gradient(to right, white,rgb(242, 242, 215));
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .container {
+      background-color: #fff;
+      border-radius: 15px;
+      display: flex;
+      width: 900px;
+      box-shadow: 0 0 30px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+    }
+
+    .left {
+      background: linear-gradient(to bottom right, #8caee0, #165cb8);
+      color: white;
+      width: 50%;
+      padding: 50px 30px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .left h1 {
+      font-size: 77px;
+      margin-bottom: 20px;
+      font-family:'Times New Roman', Times, serif;
+    }
+
+  
+
+    .right {
+      width: 50%;
+      padding: 40px;
+    }
+
+    .right h2 {
+      margin-bottom: 20px;
+      color: #333;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+      position: relative;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 12px 40px 12px 40px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+
+    .form-group i {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #888;
+    }
+
+    .form-group .toggle-password {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 12px;
+      cursor: pointer;
+      color: #0d6efd;
+    }
+
+    .options {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      margin-bottom: 20px;
+    }
+
+    .options label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      font-size: 15px;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-bottom: 10px;
+    }
+
+    .btn-primary {
+      background: #0d6efd;
+      color: white;
+    }
+
+    .btn-outline {
+      border: 1px solid #0d6efd;
+      background: white;
+      color: #0d6efd;
+    }
+
+    .message {
+      text-align: center;
+      font-size: 13px;
+      margin-top: 10px;
+      min-height: 20px;
+    }
+
+    .success {
+      color: green;
+    }
+
+    .error {
+      color: red;
+    }
+
+    .footer {
+      font-size: 13px;
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    .footer a {
+      color: #0d6efd;
+      text-decoration: none;
+    }
+
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="left">
+      <h1>Welcome</h1>
+    </div>
+    <div class="right">
+      <h2>Sign in</h2>
+      <form id="authForm">
+        <div class="form-group">
+          <i>👤</i>
+          <input type="text" id="user_id" name="user_id" placeholder="User ID" required />
+        </div>
+        <div class="form-group">
+          <i>🔐</i>
+          <input type="text" id="username" name="username" placeholder="Username" required />
+        </div>
+        <div class="form-group">
+          <i>🔒</i>
+          <input type="password" id="password" name="password" placeholder="Password" required />
+          <span class="toggle-password" onclick="togglePassword()">SHOW</span>
+        </div>
+
+        <div class="options">
+          <label><input type="checkbox"> Remember me</label>
+          <a href="#">Forgot Password?</a>
+        </div>
+
+        <button type="submit" class="btn-primary" id="loginBtn">Sign in</button>
+        <button type="button" class="btn-outline" id="signupBtn">Sign in with other</button>
+
+        <div class="message" id="message"></div>
+        <div class="footer">
+          Don’t have an account? <a href="#" onclick="submitForm('signup')">Sign up</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById("authForm");
+    const message = document.getElementById("message");
+    const passwordInput = document.getElementById("password");
+
+    function togglePassword() {
+      if (passwordInput.type === "password") {
+        passwordInput.type = "text";
+      } else {
+        passwordInput.type = "password";
+      }
+    }
+
+    document.getElementById("loginBtn").addEventListener("click", function (e) {
+      e.preventDefault();
+      submitForm("login");
+    });
+
+    document.getElementById("signupBtn").addEventListener("click", function (e) {
+      e.preventDefault();
+      submitForm("signup");
+    });
+
+    function submitForm(mode) {
+      const data = {
+        user_id: form.user_id.value.trim(),
+        username: form.username.value.trim(),
+        password: form.password.value.trim(),
+        mode: mode,
+      };
+
+      fetch("http://localhost:3000/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      })
+        .then((res) => res.json())
+        .then((result) => {
+          message.textContent = result.message;
+          message.className = result.success ? "message success" : "message error";
+
+          if (result.success) {
+            setTimeout(() => window.location.href = 'index.html', 1000);
+          }
+        })
+        .catch(() => {
+          message.textContent = "Error connecting to server";
+          message.className = "message error";
+        });
+    }
+  </script>
+</body>
+</html>
