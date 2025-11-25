@@ -1,0 +1,78 @@
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.preprocessing import StandardScaler
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.svm import SVC
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import classification_report, accuracy_score
+from flask import Flask, request, jsonify
+import joblib
+
+# Load dataset
+data = pd.read_csv("your_dataset.csv")
+
+# Data preprocessing and feature engineering
+X = data.drop("target", axis=1)
+y = data["target"]
+
+# Handle missing values (example)
+X.fillna(X.mean(), inplace=True)
+
+# Feature scaling
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+
+# Split dataset
+X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.3, random_state=42)
+
+# Model training function with hyperparameter tuning
+def train_model(X, y):
+    models = {
+        "RandomForest": RandomForestClassifier(),
+        "SVM": SVC(),
+        "LogisticRegression": LogisticRegression(max_iter=1000),
+    }
+    params = {
+        "RandomForest": {"n_estimators": [50, 100], "max_depth": [10, 20]},
+        "SVM": {"C": [0.1, 1, 10], "kernel": ["rbf", "linear"]},
+        "LogisticRegression": {"C": [0.1, 1, 10]},
+    }
+    best_models = {}
+    for name in models:
+        clf = GridSearchCV(models[name], params[name], cv=3)
+        clf.fit(X, y)
+        best_models[name] = clf.best_estimator_
+        print(f"{name} best parameters: {clf.best_params_}")
+    return best_models
+
+# Train models
+best_models = train_model(X_train, y_train)
+
+# Evaluate models
+for name, model in best_models.items():
+    preds = model.predict(X_test)
+    print(f"Accuracy for {name}: {accuracy_score(y_test, preds)}")
+    print(classification_report(y_test, preds))
+
+# Save a selected model and scaler
+joblib.dump(best_models["RandomForest"], "rf_model.pkl")
+joblib.dump(scaler, "scaler.pkl")
+
+# Real-time prediction API using Flask
+app = Flask(__name__)
+
+# Load model and scaler
+model = joblib.load("rf_model.pkl")
+scaler = joblib.load("scaler.pkl")
+
+@app.route('/predict', methods=['POST'])
+def predict():
+    data = request.get_json(force=True)
+    features = np.array(data['features']).reshape(1, -1)
+    features_scaled = scaler.transform(features)
+    prediction = model.predict(features_scaled)
+    return jsonify({'prediction': int(prediction[0])})
+
+if __name__ == '__main__':
+    app.run(debug=True)
